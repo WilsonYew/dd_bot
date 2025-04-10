@@ -1,0 +1,109 @@
+
+<!-- left wheel link-->
+    <joint name="left_wheel_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="left_wheel"/>
+        <origin xyz="0.0 0.27 0.0" rpy="-${pi/2} 0.0 0.0"/>
+        <axis xyz="0.0 0.0 1"/>
+    </joint>
+
+    <link name="left_wheel">
+        <visual>
+            <geometry>
+                <cylinder radius="0.1" length="0.04"/>
+            </geometry>
+            <material name="blue"/>
+                
+        </visual>
+
+        <collision>
+            <geometry>
+                <cylinder radius="0.1" length="0.04"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="0.1" length="0.04" radius="0.1" >
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        </xacro:inertial_cylinder>
+    </link>
+
+    <gazebo reference="left_wheel">
+        <material>Gazebo/Blue</material>
+    </gazebo>
+
+<!-- right wheel link-->
+    <joint name="right_wheel_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="right_wheel"/>
+        <origin xyz="0.0 -0.27 0.0" rpy="${pi/2} 0.0 0.0"/>
+        <axis xyz="0.0 0.0 -1"/>
+    </joint>
+
+    <link name="right_wheel">
+        <visual>
+            <geometry>
+                <cylinder radius="0.1" length="0.04"/>
+            </geometry>
+            <material name="blue"/>
+                
+        </visual>
+
+        <collision>
+            <geometry>
+                <cylinder radius="0.1" length="0.04"/>
+            </geometry>
+
+        </collision>
+        <xacro:inertial_cylinder mass="0.1" length="0.04" radius="0.1" >
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        </xacro:inertial_cylinder>
+    </link>
+
+    <gazebo reference="right_wheel">
+        <material>Gazebo/Blue</material>
+    </gazebo>
+
+
+
+
+--------------------------------------------------------------
+import os
+
+from ament_index_python.packages import get_package_share_directory
+
+from launch import LaunchDescription
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument
+from launch_ros.actions import Node
+
+import xacro
+
+
+def generate_launch_description():
+
+    # Check if we're told to use sim time
+    use_sim_time = LaunchConfiguration('use_sim_time')
+
+    # Process the URDF file
+    pkg_path = os.path.join(get_package_share_directory('dd_bot'))
+    xacro_file = os.path.join(pkg_path,'description','robot.urdf.xacro')
+    robot_description_config = xacro.process_file(xacro_file)
+    
+    # Create a robot_state_publisher node
+    params = {'robot_description': robot_description_config.toxml(), 'use_sim_time': use_sim_time}
+    node_robot_state_publisher = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='screen',
+        parameters=[params]
+    )
+
+
+    # Launch!
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='false',
+            description='Use sim time if true'),
+
+        node_robot_state_publisher
+    ])
